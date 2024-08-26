@@ -27,8 +27,22 @@ class Server(BaseHTTPRequestHandler):
         logging.info("GET request,\nPath: %s\nHeaders:\n%s\n", str(self.path), str(self.headers))
         response_data = get_response()
         self._set_response()
-        #self.wfile.write("GET request for {}".format(self.path).encode('utf-8'))
-        self.wfile.write(str(response_data).encode('utf-8'))
+
+        json_print = json.dumps(json.loads(response_data), indent = 2)
+
+        html_response = f"""
+        <html>
+        <head>
+            <title>JSON</tile>
+        </head>
+        <body>
+            <pre>{json_print}</pre>
+        </body>
+        </html>
+        """
+
+        self.wfile(html_response.enconde("utf-8"))
+
 
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])
