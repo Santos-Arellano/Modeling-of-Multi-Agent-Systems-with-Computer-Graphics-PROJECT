@@ -77,32 +77,51 @@ public class ObjectMover : MonoBehaviour
                 }
                 else
                 {
+                    //===============================0
+                    //aiuda, no apunta al objeto "Robot2", etc
                     // Procesar la respuesta de la API
+                    //Para pruebas, hacer POST y GET a la API desde Postman
                     var json = www.downloadHandler.text;
                     Dictionary<string, float[]> data = JsonUtility.FromJson<Dictionary<string, float[]>>(json);
-
+                    Debug.Log(json);
+                    data.TryGetValue("Robot2", out float[] values);
+                    Debug.Log(values);
                     // Actualizar posiciones en función de los datos recibidos
-                    UpdateObjectPositions(data);
+                    // UpdateObjectPositions(data);
                 }
             }
             yield return new WaitForSeconds(1f); // Consulta cada segundo
         }
     }
 
-    public void UpdateObjectPositions(Dictionary<string, float[]> data)
+    void UpdateObjectPositions(Dictionary<string, float[]> data)
     {
-        // Actualizar las posiciones de los objetos según los datos recibidos del API
-        foreach (var obj in objects.Keys)
+        foreach (var item in data)
         {
-            if (objects[obj] != null)
+            if (objects.ContainsKey(item.Key))
             {
-                Vector3 newPosition = new Vector3(data[obj][0], data[obj][1], data[obj][2]);
-                objects[obj].transform.position = newPosition;
-                Debug.Log($"{obj} moved to {newPosition}");
+                GameObject obj = objects[item.Key];
+                if (obj != null)
+                {
+                    if (item.Value.Length == 3)
+                    {
+                        // Convertir el float[] a Vector3
+                        Vector3 newPosition = new Vector3(item.Value[0], item.Value[1], item.Value[2]);
+                        obj.transform.position = newPosition;
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"Data for {item.Key} does not contain exactly 3 elements.");
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"Object with key {item.Key} found in dictionary but the GameObject is null.");
+                }
             }
             else
             {
-                Debug.LogWarning("GameObject not found: " + obj);
+                Debug.LogWarning($"Key {item.Key} not found in the objects dictionary.");
             }
         }
     }
