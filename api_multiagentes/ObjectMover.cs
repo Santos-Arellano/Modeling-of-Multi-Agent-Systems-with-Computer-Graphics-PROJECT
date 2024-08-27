@@ -96,7 +96,7 @@ public class ObjectMover : MonoBehaviour
         {
             if (objects[obj] != null)
             {
-                Vector3 newPosition = new Vector3(data[obj][0], 0, data[obj][1]);
+                Vector3 newPosition = new Vector3(data[obj][0], data[obj][1], data[obj][2]);
                 objects[obj].transform.position = newPosition;
                 Debug.Log($"{obj} moved to {newPosition}");
             }
