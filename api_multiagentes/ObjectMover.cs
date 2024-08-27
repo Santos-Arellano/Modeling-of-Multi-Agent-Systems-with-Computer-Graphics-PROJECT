@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 public class ObjectMover : MonoBehaviour
 {
@@ -77,20 +79,53 @@ public class ObjectMover : MonoBehaviour
                 }
                 else
                 {
-                    //===============================0
-                    //aiuda, no apunta al objeto "Robot2", etc
                     // Procesar la respuesta de la API
-                    //Para pruebas, hacer POST y GET a la API desde Postman
                     var json = www.downloadHandler.text;
-                    Dictionary<string, float[]> data = JsonUtility.FromJson<Dictionary<string, float[]>>(json);
-                    Debug.Log(json);
-                    data.TryGetValue("Robot2", out float[] values);
-                    Debug.Log(values);
+                    Debug.Log("JSON recibido: " + json);
+
+                    // Usar JObject para analizar el JSON y verificar el tipo de datos
+                    JObject jsonData = JObject.Parse(json);
+                    Dictionary<string, float[]> data = new Dictionary<string, float[]>();
+
+                    foreach (var item in jsonData)
+                    {
+                        if (item.Value is JArray)
+                        {
+                            // Convertir JArray a float[]
+                            float[] positions = item.Value.ToObject<float[]>();
+                            data.Add(item.Key, positions);
+                        }
+                        else
+                        {
+                            Debug.LogWarning($"Valor inesperado para la clave {item.Key}: {item.Value}");
+                        }
+                    }
+
+                    // Verifica las claves y valores
+                    foreach (var key in data.Keys)
+                    {
+                        Debug.Log("Clave en data: " + key);
+                    }
+
+                    // Buscar una clave específica (por ejemplo, "Robot2")
+                    if (data.TryGetValue("Robot2", out float[] values))
+                    {
+                        Debug.Log("Valores para Robot2:");
+                        foreach (float val in values)
+                        {
+                            Debug.Log("Valor: " + val);
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarning("No se encontraron valores para Robot2.");
+                    }
+
                     // Actualizar posiciones en función de los datos recibidos
-                    // UpdateObjectPositions(data);
+                    UpdateObjectPositions(data);
                 }
             }
-            yield return new WaitForSeconds(1f); // Consulta cada segundo
+            yield return new WaitForSeconds(0.5f); // Consulta cada x tiempo
         }
     }
 
@@ -103,15 +138,20 @@ public class ObjectMover : MonoBehaviour
                 GameObject obj = objects[item.Key];
                 if (obj != null)
                 {
-                    if (item.Value.Length == 3)
+                    if (item.Value.Length == 2) // 
                     {
-                        // Convertir el float[] a Vector3
-                        Vector3 newPosition = new Vector3(item.Value[0], item.Value[1], item.Value[2]);
-                        obj.transform.position = newPosition;
+                        Vector3 currentPosition = obj.transform.position;
+                        Vector3 newPosition = new Vector3(item.Value[0], 0, item.Value[1]);
+
+                        // Para suavizar el movimiento
+                        Vector3 smoothedPosition = Vector3.Lerp(currentPosition, newPosition, Time.deltaTime * 5f);
+
+                        Debug.Log($"Actualizando posición de {item.Key}: {smoothedPosition}");
+                        obj.transform.position = smoothedPosition;
                     }
                     else
                     {
-                        Debug.LogWarning($"Data for {item.Key} does not contain exactly 3 elements.");
+                        Debug.LogWarning($"Data for {item.Key} does not contain exactly 2 elements.");
                     }
                 }
                 else
