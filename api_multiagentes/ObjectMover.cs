@@ -18,8 +18,8 @@ public class ObjectMover : MonoBehaviour
         // Inicializar posiciones de los objetos
         InitializeObjects();
 
-        // Iniciar la obtención de datos desde la API
-        StartCoroutine(GetMovementData());
+        // Iniciar la generación de posiciones y la obtención de datos desde la API
+        StartCoroutine(AutoMoveObjects());
     }
 
     void DefineInitialPositions()
@@ -65,22 +65,39 @@ public class ObjectMover : MonoBehaviour
         }
     }
 
-    IEnumerator GetMovementData()
+    IEnumerator AutoMoveObjects()
     {
+        // (POST)
+        using (UnityWebRequest postRequest = UnityWebRequest.PostWwwForm(apiUrl, ""))
+        {
+            yield return postRequest.SendWebRequest();
+
+            if (postRequest.result == UnityWebRequest.Result.ConnectionError || postRequest.result == UnityWebRequest.Result.ProtocolError)
+            {
+                Debug.LogError(postRequest.error);
+                yield break;
+            }
+            else
+            {
+                Debug.Log("POST realizado exitosamente. Iniciando obtención de posiciones...");
+            }
+        }
+
         while (true)
         {
-            using (UnityWebRequest www = UnityWebRequest.Get(apiUrl))
+            // (GET)
+            using (UnityWebRequest getRequest = UnityWebRequest.Get(apiUrl))
             {
-                yield return www.SendWebRequest();
+                yield return getRequest.SendWebRequest();
 
-                if (www.result == UnityWebRequest.Result.ConnectionError || www.result == UnityWebRequest.Result.ProtocolError)
+                if (getRequest.result == UnityWebRequest.Result.ConnectionError || getRequest.result == UnityWebRequest.Result.ProtocolError)
                 {
-                    Debug.LogError(www.error);
+                    Debug.LogError(getRequest.error);
                 }
                 else
                 {
                     // Procesar la respuesta de la API
-                    var json = www.downloadHandler.text;
+                    var json = getRequest.downloadHandler.text;
                     Debug.Log("JSON recibido: " + json);
 
                     // Usar JObject para analizar el JSON y verificar el tipo de datos
@@ -101,31 +118,12 @@ public class ObjectMover : MonoBehaviour
                         }
                     }
 
-                    // Verifica las claves y valores
-                    foreach (var key in data.Keys)
-                    {
-                        Debug.Log("Clave en data: " + key);
-                    }
-
-                    // Buscar una clave específica (por ejemplo, "Robot2")
-                    if (data.TryGetValue("Robot2", out float[] values))
-                    {
-                        Debug.Log("Valores para Robot2:");
-                        foreach (float val in values)
-                        {
-                            Debug.Log("Valor: " + val);
-                        }
-                    }
-                    else
-                    {
-                        Debug.LogWarning("No se encontraron valores para Robot2.");
-                    }
-
                     // Actualizar posiciones en función de los datos recibidos
                     UpdateObjectPositions(data);
                 }
             }
-            yield return new WaitForSeconds(0.5f); // Consulta cada x tiempo
+
+            yield return new WaitForSeconds(0.2f); // Consulta cada x tiempo
         }
     }
 
@@ -138,16 +136,10 @@ public class ObjectMover : MonoBehaviour
                 GameObject obj = objects[item.Key];
                 if (obj != null)
                 {
-                    if (item.Value.Length == 2) // 
+                    if (item.Value.Length == 2) 
                     {
-                        Vector3 currentPosition = obj.transform.position;
                         Vector3 newPosition = new Vector3(item.Value[0], 0, item.Value[1]);
-
-                        // Para suavizar el movimiento
-                        Vector3 smoothedPosition = Vector3.Lerp(currentPosition, newPosition, Time.deltaTime * 5f);
-
-                        Debug.Log($"Actualizando posición de {item.Key}: {smoothedPosition}");
-                        obj.transform.position = smoothedPosition;
+                        obj.transform.position = newPosition;
                     }
                     else
                     {
