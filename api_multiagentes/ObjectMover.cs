@@ -74,6 +74,32 @@ public class ObjectMover : MonoBehaviour
 
     IEnumerator AutoMoveObjects()
     {
+        using (UnityWebRequest putRequest = new UnityWebRequest(apiUrl, "PUT"))
+        {
+            // Si deseas enviar datos en el cuerpo de la solicitud, los añades aquí
+            string jsonData = ""; // Aquí pones los datos que deseas enviar como JSON
+            byte[] jsonToSend = new System.Text.UTF8Encoding().GetBytes(jsonData);
+            putRequest.uploadHandler = new UploadHandlerRaw(jsonToSend);
+            putRequest.downloadHandler = new DownloadHandlerBuffer();
+
+            // Establecer el encabezado de la solicitud como 'application/json'
+            putRequest.SetRequestHeader("Content-Type", "application/json");
+
+            yield return putRequest.SendWebRequest();
+
+            if (putRequest.result == UnityWebRequest.Result.ConnectionError || putRequest.result == UnityWebRequest.Result.ProtocolError)
+            {
+                // Manejar el error
+                Debug.LogError(putRequest.error);
+                yield return new WaitForSeconds(0.5f); // Consulta cada x tiempo
+                
+            }
+            else
+            {
+                Debug.Log("PUT realizado exitosamente. Iniciando obtención de posiciones...");
+            }
+        }
+
         // (POST)
         using (UnityWebRequest postRequest = UnityWebRequest.PostWwwForm(apiUrl, ""))
         {
