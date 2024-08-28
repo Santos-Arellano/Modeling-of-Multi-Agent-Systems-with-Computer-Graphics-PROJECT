@@ -19,7 +19,11 @@ public class Posicion_Inicial : MonoBehaviour
             Vector3 pos = objects[i].transform.position;
             string name = objects[i].name;
 
-            json += "{ \"x\": " + pos.x + ", \"z\": " + pos.z + ", \"name\": \"" + name + "\"}";
+            // Cast coordinates to integers
+            int x = Mathf.RoundToInt(pos.x);
+            int z = Mathf.RoundToInt(pos.z);
+
+            json += "{ \"x\": " + x + ", \"z\": " + z + ", \"name\": \"" + name + "\"}";
             if (i < objects.Count - 1)
             {
                 json += ",";
