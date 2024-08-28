@@ -4,6 +4,8 @@ using UnityEngine;
 using UnityEngine.Networking;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using UnityEditor;
+
 
 public class ObjectMover : MonoBehaviour
 {
@@ -45,7 +47,12 @@ public class ObjectMover : MonoBehaviour
             { "Box17", GameObject.Find("Box17") },
             { "Box18", GameObject.Find("Box18") },
             { "Box19", GameObject.Find("Box19") },
-            { "Box20", GameObject.Find("Box20") }
+            { "Box20", GameObject.Find("Box20") },
+            { "Goal21", GameObject.Find("pila21") },
+            { "Goal22", GameObject.Find("pila22") },
+            { "Goal23", GameObject.Find("pila23") },
+            { "Goal24", GameObject.Find("pila24") },
+            { "Goal25", GameObject.Find("pila25") }
         };
     }
 
@@ -74,7 +81,8 @@ public class ObjectMover : MonoBehaviour
 
             if (postRequest.result == UnityWebRequest.Result.ConnectionError || postRequest.result == UnityWebRequest.Result.ProtocolError)
             {
-                Debug.LogError(postRequest.error);
+                // Debug.LogError(postRequest.error);
+                new WaitForSeconds(.5f); // Consulta cada x tiempo
                 yield break;
             }
             else
@@ -92,7 +100,14 @@ public class ObjectMover : MonoBehaviour
 
                 if (getRequest.result == UnityWebRequest.Result.ConnectionError || getRequest.result == UnityWebRequest.Result.ProtocolError)
                 {
-                    Debug.LogError(getRequest.error);
+                    if (getRequest.responseCode == 404)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        Debug.LogError(getRequest.error);
+                    }
                 }
                 else
                 {
@@ -123,37 +138,36 @@ public class ObjectMover : MonoBehaviour
                 }
             }
 
-            yield return new WaitForSeconds(0.2f); // Consulta cada x tiempo
+            yield return new WaitForSeconds(.5f); // Consulta cada x tiempo
         }
+        
+        QuitGame();
+
+        // StopGameInEditor();
+        // Application.Quit();
     }
 
+    void QuitGame()
+        {
+            #if UNITY_EDITOR
+                    EditorApplication.isPlaying = false; // Stops the game in the Unity Editor
+            #else
+                    Application.Quit(); // Quits the application in a standalone build
+            #endif
+        }
     void UpdateObjectPositions(Dictionary<string, float[]> data)
     {
-        foreach (var item in data)
+        foreach (var item in objects)
         {
-            if (objects.ContainsKey(item.Key))
+            if (data.ContainsKey(item.Key))
             {
-                GameObject obj = objects[item.Key];
-                if (obj != null)
-                {
-                    if (item.Value.Length == 2) 
-                    {
-                        Vector3 newPosition = new Vector3(item.Value[0], 0, item.Value[1]);
-                        obj.transform.position = newPosition;
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"Data for {item.Key} does not contain exactly 2 elements.");
-                    }
-                }
-                else
-                {
-                    Debug.LogWarning($"Object with key {item.Key} found in dictionary but the GameObject is null.");
-                }
+                Vector3 newPosition = new Vector3(data[item.Key][0], 0, data[item.Key][1]);
+                item.Value.transform.position = newPosition;
             }
             else
             {
-                Debug.LogWarning($"Key {item.Key} not found in the objects dictionary.");
+                item.Value.transform.position = new Vector3(100, 0, 0); // Inicia en posición (0, 0, 0)
+
             }
         }
     }

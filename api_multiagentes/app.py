@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify
 from constants import positions
 from agent import start
 
@@ -17,13 +17,15 @@ def get_position():
     if positions:
         return jsonify(positions.pop(0))
     else:
-        return jsonify({"error": "No positions available"})
-    
-@app.route('/move', methods=['DELETE'])
-def reset_positions():
+        return jsonify({'status': 'error'}), 404
+
+@app.route('/move', methods=['PUT'])
+def delete_positions():
     global positions
-    positions = []
+    positions.clear()
+
     return jsonify({'status': 'success'})
 
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='127.0.0.1', port=5000)
